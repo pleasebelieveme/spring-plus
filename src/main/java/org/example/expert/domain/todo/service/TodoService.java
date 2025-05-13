@@ -1,5 +1,9 @@
 package org.example.expert.domain.todo.service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 import lombok.RequiredArgsConstructor;
 import org.example.expert.client.WeatherClient;
 import org.example.expert.domain.common.dto.AuthUser;
@@ -47,10 +51,13 @@ public class TodoService {
         );
     }
     @Transactional(readOnly = true)
-    public Page<TodoResponse> getTodos(int page, int size) {
+    public Page<TodoResponse> getTodos(int page, int size, LocalDate fromDate, LocalDate toDate, String weather) {
         Pageable pageable = PageRequest.of(page - 1, size);
+        // JPA에서 비교하려면 LocalDateTime으로 변환이 필요하다
+        LocalDateTime from = (fromDate != null) ? fromDate.atStartOfDay() : null;
+        LocalDateTime to = (toDate != null) ? toDate.atTime(LocalTime.MAX) : null;
 
-        Page<Todo> todos = todoRepository.findAllByOrderByModifiedAtDesc(pageable);
+        Page<Todo> todos = todoRepository.findAllByModifiedAtBetween(from, to, weather, pageable);
 
         return todos.map(todo -> new TodoResponse(
                 todo.getId(),
